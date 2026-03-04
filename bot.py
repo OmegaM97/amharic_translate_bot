@@ -1,19 +1,15 @@
-# bot.py
 from fastapi import FastAPI, Request
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
 import requests
 
-# Load environment variables
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# Initialize FastAPI
 app = FastAPI()
 
-# Initialize Groq client
 client = OpenAI(
     api_key=GROQ_API_KEY,
     base_url="https://api.groq.com/openai/v1",
@@ -33,7 +29,7 @@ Input text: {text}
         model="openai/gpt-oss-20b",
         input=prompt,
     )
-    return response.output_text.strip()  # remove extra whitespace
+    return response.output_text.strip()
 
 def send_telegram_message(chat_id: int, text: str):
     """
@@ -55,7 +51,6 @@ async def telegram_webhook(request: Request):
         text = data["message"].get("text", "")
         
         if text:
-            # Check if message is a command
             if text.startswith("/"):
                 if text.strip().lower() == "/start":
                     welcome_message = (
@@ -68,7 +63,6 @@ async def telegram_webhook(request: Request):
                 else:
                     send_telegram_message(chat_id, "⚠️ We are not handling that command yet. Feature coming soon.")
             else:
-                # Normal text → translate
                 translated = translate_to_amharic(text)
                 send_telegram_message(chat_id, translated)
     
