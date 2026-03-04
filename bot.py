@@ -21,16 +21,19 @@ client = OpenAI(
 
 def translate_to_amharic(text: str) -> str:
     """
-    Translate input text to Amharic using Groq OpenAI client
+    Translate input text to Amharic using Groq OpenAI client.
+    Strictly translation only, no explanations, no extra text.
     """
-    prompt = f"Translate the following text to Amharic:\n\n{text}"
-    
+    prompt = f"""
+You are a strict translator. ONLY translate the input text to Amharic.
+Do NOT add explanations, summaries, or anything else.
+Input text: {text}
+"""
     response = client.responses.create(
         model="openai/gpt-oss-20b",
         input=prompt,
     )
-    
-    return response.output_text
+    return response.output_text.strip()  # remove extra whitespace
 
 def send_telegram_message(chat_id: int, text: str):
     """
@@ -52,8 +55,22 @@ async def telegram_webhook(request: Request):
         text = data["message"].get("text", "")
         
         if text:
-            translated = translate_to_amharic(text)
-            send_telegram_message(chat_id, translated)
+            # Check if message is a command
+            if text.startswith("/"):
+                if text.strip().lower() == "/start":
+                    welcome_message = (
+                        "👋 Welcome to the Amharic Translator Bot!\n\n"
+                        "I can translate any text you send into Amharic. "
+                        "Just type your message in any language, and I will give you a clean translation in Amharic.\n\n"
+                        "Currently, only text translation is supported."
+                    )
+                    send_telegram_message(chat_id, welcome_message)
+                else:
+                    send_telegram_message(chat_id, "⚠️ We are not handling that command yet. Feature coming soon.")
+            else:
+                # Normal text → translate
+                translated = translate_to_amharic(text)
+                send_telegram_message(chat_id, translated)
     
     return {"ok": True}
 
